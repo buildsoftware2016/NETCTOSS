@@ -1,0 +1,152 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.tarena.dao.ServiceDao">
+
+	<!-- findAll -->
+	<select id="findAll"
+		parameterType="com.tarena.entity.page.ServicePage"
+		resultType="hashmap">
+		select * from (
+			select ser.*, rownum r from 
+			(
+			select s.*, a.real_name, a.idcard_no, 
+            c.name,c.descr from service s 
+            inner join account a on a.account_id=s.account_id 
+            inner join cost c on c.cost_id=s.cost_id  
+            
+            order by s.service_id 
+            ) ser 
+            
+            <where>
+            	<if test="s_os_username!=null &amp;&amp; s_os_username.length()>0">
+            		and ser.os_username=#{s_os_username}
+            	</if>
+            	
+            	<if test="s_unix_host!=null &amp;&amp; s_unix_host.length()>0">
+            		and ser.unix_host=#{s_unix_host}
+            	</if>
+            	
+            	<if test="s_idcard_no!=null &amp;&amp; s_idcard_no.length()>0">
+            		and ser.idcard_no=#{s_idcard_no}
+            	</if>
+            	
+            	<if test="s_status!=null &amp;&amp; s_status.length()>0 &amp;&amp; !s_status.equals('-1') " >
+            		and ser.status=#{s_status}
+            	</if>
+            </where> 
+            
+		) where r&lt;#{begin} and r>#{end}
+	</select>
+	
+	<select id="rows"
+		resultType="int">
+		select count(*) from 
+		(
+			select s.*, a.real_name, a.idcard_no, 
+            c.name,c.descr from service s 
+            inner join account a on a.account_id=s.account_id 
+            inner join cost c on c.cost_id=s.cost_id  
+            order by s.service_id 
+            )ser 
+        
+            <where>
+            	<if test="s_os_username!=null &amp;&amp; s_os_username.length()>0">
+            		and ser.os_username=#{s_os_username}
+            	</if>
+            	
+            	<if test="s_unix_host!=null &amp;&amp; s_unix_host.length()>0">
+            		and ser.unix_host=#{s_unix_host}
+            	</if>
+            	
+            	<if test="s_idcard_no!=null &amp;&amp; s_idcard_no.length()>0">
+            		and ser.idcard_no=#{s_idcard_no}
+            	</if>
+            	
+            	<if test="s_status!=null &amp;&amp; s_status.length()>0 &amp;&amp; !s_status.equals('-1') " >
+            		and ser.status=#{s_status}
+            	</if>
+            </where> 
+                  
+	</select>
+	
+	<update id="start" 
+		parameterType="String">
+		update service set 
+		status='0',
+		pause_date=null  
+		where service_id=#{id,jdbcType=INTEGER}
+	</update>
+	
+	<update id="pause" 
+		parameterType="String">
+		update service set 
+		status='1',
+		pause_date=sysdate  
+		where service_id=#{id,jdbcType=INTEGER}
+	</update>
+	
+	<select id="getAccountStatus"
+		parameterType="String" 
+		resultType="String">
+		select a.status from account a 
+		inner join service s 
+		on a.account_id=s.account_id 
+		where s.service_id=#{id,jdbcType=INTEGER}
+	</select>
+	
+	<update id="delete" 
+		parameterType="String">
+		update service set 
+		status='2',
+		close_date=sysdate  
+		where service_id=#{id,jdbcType=INTEGER}
+	</update>
+	
+	<select id="findAllCost" 
+		resultType="com.tarena.entity.Cost">
+		select * from cost
+	</select>
+	
+	<insert id="add" 
+		parameterType="com.tarena.entity.Service">
+		insert into service 
+		(service_id,account_id,cost_id,unix_host,
+		os_username,login_passwd,status,create_date) 
+		values (
+		service_seq.nextval,
+		#{account_id,jdbcType=INTEGER}, 
+		#{cost_id,jdbcType=INTEGER},
+		#{unix_host,jdbcType=VARCHAR},
+		#{os_username,jdbcType=VARCHAR},
+		#{login_passwd,jdbcType=VARCHAR},
+		#{status,jdbcType=CHAR},
+		#{create_date,jdbcType=TIMESTAMP} )
+		
+	</insert>
+	
+	<select id="findById" 
+		parameterType="String" 
+		resultType="com.tarena.entity.Service">
+		select * from service where service_id=#{id}
+	</select>
+	
+	<!-- 修改资费 -->
+	<insert id="update" 
+		parameterType="com.tarena.entity.Service">
+		insert into SERVICE_UPDATE_BAK (
+		id,service_id,cost_id) 
+		values (
+		service_bak_seq.nextval,
+		#{service_id,jdbcType=INTEGER},
+		#{cost_id,jdbcType=INTEGER}
+		)
+	</insert>
+</mapper>
+
+
+
+
+
+

@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.tarena.dao.CostDao">
+
+	<!-- findAll -->
+	<select id="findAll"
+		parameterType="com.tarena.entity.page.CostPage"
+		resultType="com.tarena.entity.Cost">
+		select * from (
+			select c.*,rownum r from (
+				select * from cost 
+				order by cost_id
+			) c
+		) where r&lt;#{begin} and r>#{end}
+	</select>
+	
+	<!-- addCost -->
+	<!-- 
+		1.当传入对象的属性为null时，在执行该SQL时会报错。
+		  但是在项目中，新增时很多字段是可以为空的，因此
+		  必须要解决这个问题。
+		2.该问题产生的原因是，在执行SQL时MyBatis会自动
+		  通过对象中的属性给SQL中参数赋值，它会自动将Java
+		  类型转换成数据库的类型。而一旦传入的是null它就
+		  无法准确判断这个类型应该是什么，就有可能将类型
+		  转换错误，从而报错。
+		3.要解决这个问题，需要针对这些可能为空的字段，手
+		  动指定其转换时用到的类型。
+		4.一般情况下，我们没有必要按个字段去识别/判断它
+		  是否可以为空，而是将所有的字段都当做可以为空，
+		  全部手动设置转换类型。
+	 -->
+	<insert id="addCost" 
+		parameterType="com.tarena.entity.Cost">
+		insert into cost values(
+			cost_seq.nextval,
+			#{name,jdbcType=VARCHAR},
+			#{base_duration,jdbcType=INTEGER},
+			#{base_cost,jdbcType=DOUBLE},
+			#{unit_cost,jdbcType=DOUBLE},
+			#{status,jdbcType=CHAR},
+			#{descr,jdbcType=VARCHAR},
+			#{creatime,jdbcType=TIMESTAMP},
+			#{startime,jdbcType=TIMESTAMP},
+			#{cost_type,jdbcType=CHAR}
+		)
+	</insert>
+	
+	<select id="rows"
+		resultType="int">
+		select count(*) from cost
+	</select>
+	
+	<select id="findById"
+		parameterType="int" 
+		resultType="com.tarena.entity.Cost">
+		select * from cost where cost_id=#{cost_id}
+	</select>
+	
+	<update id="update"
+		parameterType="com.tarena.entity.Cost">
+		update cost set 
+			name=#{name,jdbcType=VARCHAR},
+			cost_type=#{cost_type,jdbcType=CHAR},
+			base_duration=#{base_duration,jdbcType=INTEGER},
+			base_cost=#{base_cost,jdbcType=DOUBLE},
+			unit_cost=#{unit_cost,jdbcType=DOUBLE},
+			descr=#{descr,jdbcType=VARCHAR} 
+		where cost_id=#{cost_id,jdbcType=INTEGER}
+	</update>
+	
+	<delete id="delete" 
+		parameterType="int">
+		delete from cost where cost_id=#{cost_id}
+	</delete>
+	
+	<update id="startCost" 
+		parameterType="String">
+		update cost set 
+			status=0,
+			startime=sysdate 
+		where cost_id=#{id}
+	</update>
+</mapper>
+
+
+
+
+
+

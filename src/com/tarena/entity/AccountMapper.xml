@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.tarena.dao.AccountDao">
+
+	<!-- findAll -->
+	<select id="findAll"
+		parameterType="com.tarena.entity.page.AccountPage" 
+		resultType="com.tarena.entity.Account">
+		select * from (
+			select c.*,rownum r from (
+				select * from account 
+				
+				<where>
+				<!-- 搜索条件不为null并且不为""时，拼入SQL -->
+				<if test="idcardNo!=null &amp;&amp; idcardNo.length()>0">
+						and idcard_no=#{idcardNo}
+				</if>
+				<if test="realName!=null &amp;&amp; realName.length()>0">
+						and real_name=#{realName}
+				</if>
+				<if test="loginName!=null &amp;&amp; loginName.length()>0">
+						and login_name=#{loginName}
+				</if>
+				<!-- 状态为-1时代表全部，应该不拼入SQL，所以
+					在条件中需要加上status!=-1。
+					注意内层有双引号，外层改为单引号。 -->
+				<if test='status!=null &amp;&amp; status.length()>0 &amp;&amp; !status.equals("-1")'>
+						and status=#{status}
+				</if>
+				</where>
+				
+				order by account_id
+			) c
+		) where r&lt;#{begin} and r>#{end}
+	</select>
+	
+	<!-- 在有搜索条件时，一定不要忘记将搜索条件拼到rows的SQL中。 -->
+	<select id="rows"
+		parameterType="com.tarena.entity.page.AccountPage" 
+		resultType="int">
+		select count(*) from account
+		<where>
+				<!-- 搜索条件不为null并且不为""时，拼入SQL -->
+				<if test="idcardNo!=null &amp;&amp; idcardNo.length()>0">
+						and idcard_no=#{idcardNo}
+				</if>
+				<if test="realName!=null &amp;&amp; realName.length()>0">
+						and real_name=#{realName}
+				</if>
+				<if test="loginName!=null &amp;&amp; loginName.length()>0">
+						and login_name=#{loginName}
+				</if>
+				<!-- 状态为-1时代表全部，应该不拼入SQL，所以
+					在条件中需要加上status!=-1。
+					注意内层有双引号，外层改为单引号。 -->
+				<if test='status!=null &amp;&amp; status.length()>0 &amp;&amp; !status.equals("-1")'>
+						and status=#{status}
+				</if>
+		</where>
+	</select>
+	
+	<select id="findById"
+		parameterType="int" 
+		resultType="com.tarena.entity.Account">
+		select * from account where account_id=#{account_id}
+	</select>
+	
+	<!-- addAccount -->
+	<insert id="addAccount" 
+		parameterType="com.tarena.entity.Account">
+		insert into account 
+			(account_id,real_name,idcard_no,login_name,login_passwd,telephone,
+			recommender_id,birthdate,email,occupation,gender,mailaddress,zipcode,qq,
+			status,create_date) 
+		 	values(
+			account_seq.nextval,
+			#{real_name,jdbcType=VARCHAR},
+			#{idcard_no,jdbcType=CHAR},
+			#{login_name,jdbcType=VARCHAR},
+			#{login_passwd,jdbcType=VARCHAR},
+			#{telephone,jdbcType=VARCHAR},
+			#{recommender_id,jdbcType=INTEGER},
+			#{birthdate,jdbcType=TIMESTAMP},
+			#{email,jdbcType=VARCHAR},
+			#{occupation,jdbcType=VARCHAR},
+			#{gender,jdbcType=CHAR},
+			#{mailaddress,jdbcType=VARCHAR},
+			#{zipcode,jdbcType=CHAR},
+			#{qq,jdbcType=VARCHAR},
+			#{status,jdbcType=CHAR},
+			#{create_date,jdbcType=TIMESTAMP}
+		)
+	</insert>
+	
+	<select id="findByIdcard_no"
+		parameterType="String" 
+		resultType="int">
+		select account_id from account where idcard_no=#{a}
+	</select>
+		 
+	<update id="update"
+		parameterType="com.tarena.entity.Account">
+		update account set 
+			real_name=#{real_name,jdbcType=VARCHAR},
+			telephone=#{telephone,jdbcType=VARCHAR},
+			recommender_id=#{recommender_id,jdbcType=INTEGER},
+			email=#{email,jdbcType=VARCHAR},
+			occupation=#{occupation,jdbcType=VARCHAR},
+			gender=#{gender,jdbcType=CHAR},
+			mailaddress=#{mailaddress,jdbcType=VARCHAR},
+			zipcode=#{zipcode,jdbcType=CHAR},
+			qq=#{qq,jdbcType=VARCHAR} 
+		where account_id=#{account_id,jdbcType=INTEGER}
+	</update>
+	
+	<!--
+	<delete id="delete" 
+		parameterType="int">
+		delete from cost where cost_id=#{cost_id}
+	</delete>
+	
+	 -->
+	 
+	 <!-- 暂停后，记载暂停时间 -->
+	 <update id="pauseAccount"
+		parameterType="String">
+		update account set 
+			 status=1,
+			 pause_date=sysdate  
+		where account_id=#{id,jdbcType=INTEGER}
+	</update>
+	
+	<!-- 暂停下属所有的业务账号 -->
+	<update id="pauseByAccount" 
+		parameterType="String">
+		update service set 
+		status=1,
+		pause_date=sysdate  
+		where account_id=#{id} and status=0 
+	</update>
+	 
+	 <!-- 重新开通后，删除暂停时间 -->
+	 <update id="startAccount"
+		parameterType="String">
+		update account set 
+			 status=0,
+			 pause_date=null  
+		where account_id=#{id,jdbcType=INTEGER}
+	</update>
+	
+	<!-- 删除后，记载删除时间 -->
+	<update id="deleAccount"
+		parameterType="String">
+		update account set 
+			 status=2,
+			 close_date=sysdate   
+		where account_id=#{id,jdbcType=INTEGER}
+	</update>
+	
+	<!-- 删除下属所有的业务账号 -->
+	<update id="deleByAccount" 
+		parameterType="String">
+		update service set 
+		status=2,
+		close_date=sysdate  
+		where account_id=#{id} and status != 2 
+	</update>
+	
+	<select id="findByIdcardNo"
+		parameterType="String" 
+		resultType="com.tarena.entity.Account">
+		select * from account where idcard_no=#{a}
+	</select>
+</mapper>
+
+
+
+
+
+

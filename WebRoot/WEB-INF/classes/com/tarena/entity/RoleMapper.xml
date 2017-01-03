@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.tarena.dao.RoleDao">
+
+	<!-- findAll -->
+	<select id="findAll"
+		parameterType="com.tarena.entity.page.RolePage"  
+		resultMap="roleMap">
+		select * from (
+			select c.*,rownum r from (
+				select * from role_info 
+				order by role_id
+			) c
+		) where r &lt; #{begin} and r>#{end}
+	</select>
+	
+	<select id="findModules" 
+		parameterType="int" 
+		resultType="com.tarena.entity.Module">
+		select * from module_info
+		where module_id in (
+			select module_id from role_module
+			where role_id=#{role_id}
+		)
+	</select>
+	
+	<resultMap id="roleMap"  
+		type="com.tarena.entity.Role">
+		<!-- 此处可以省略与字段同名的属性，
+			但是id字段对应的属性映射不能省略。 -->
+		<id column="role_id" property="role_id"/>
+		
+		<collection property="modules" 
+			javaType="arraylist" 
+			ofType="com.tarena.entity.Module" 
+		    column="role_id"
+		    select="findModules">
+		    <!-- 此处可以省略模块表中与字段同名的属性映射。 -->
+		</collection>
+	</resultMap>	
+	
+	<select id="rows" 
+		resultType="int">
+		select count(*) from role_info
+	</select>
+	
+	<select id="finAllModules"	
+		resultType="com.tarena.entity.Module">
+		select * from module_info
+	</select>
+	
+	<select id="findRoleByName" 
+		parameterType="String"
+		resultType="com.tarena.entity.Role">
+		select * from role_info where name=#{name,jdbcType=VARCHAR}
+	</select>
+	
+	<insert id="addRole" 
+		parameterType="com.tarena.entity.Role">
+		<!-- 调用sequence生成ID，并将ID值注入给实体对象 -->
+		<selectKey 
+			keyProperty="role_id" 
+			resultType="int" 
+			order="BEFORE"> 
+			select role_seq.nextval from dual
+		</selectKey>
+		insert into role_info 
+		values (
+		#{role_id},
+		#{name,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<insert id="saveRoleModule" 
+		parameterType="com.tarena.entity.RoleModule">
+		insert into role_module 
+		values (
+		#{role_id},
+		#{module_id}
+		)
+	</insert>
+	
+	<select id="findById" 
+		parameterType="int" 
+		resultMap="roleMap">
+		select * from role_info where role_id=#{id}
+	</select>
+	
+	<delete id="deleModByRole" 
+		parameterType="com.tarena.entity.Role">
+		delete from role_module where role_id=#{role_id}
+	</delete>
+	
+	<update id="modiRole" 
+		parameterType="com.tarena.entity.Role">
+		update role_info set 
+		name=#{name,jdbcType=VARCHAR} 
+		where role_id=#{role_id}
+	</update>
+	
+	<delete id="deleModByRoId" 
+		parameterType="int">
+		delete from role_module where role_id=#{id}
+	</delete>
+	
+	<delete id="deleRole" 
+		parameterType="int">
+		delete from role_info where role_id=#{id}
+	</delete>
+</mapper>
+
+
+
+
+
+
